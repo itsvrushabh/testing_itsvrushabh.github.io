@@ -1,4 +1,5 @@
 """Step definitions for testing interactive TUI terminal emulator."""
+import time
 from behave import given, when, then
 
 
@@ -26,7 +27,14 @@ def step_click_quick_cmd(context, command):
 
 @then('the terminal output should contain "{expected_content}"')
 def step_terminal_output_contains(context, expected_content):
-    output = context.terminal_page.get_output_text()
+    timeout = 5.0
+    start = time.time()
+    output = ""
+    while time.time() - start < timeout:
+        output = context.terminal_page.get_output_text()
+        if expected_content.lower() in output.lower():
+            return
+        context.page.wait_for_timeout(200)
     assert expected_content.lower() in output.lower(), \
         f"Expected terminal output to contain '{expected_content}', but got:\n{output}"
 
@@ -38,18 +46,39 @@ def step_type_terminal_command(context, command):
 
 @then('the terminal output should match either "{content1}" or "{content2}"')
 def step_terminal_output_contains_either(context, content1, content2):
-    output = context.terminal_page.get_output_text()
+    timeout = 5.0
+    start = time.time()
+    output = ""
+    while time.time() - start < timeout:
+        output = context.terminal_page.get_output_text()
+        if content1.lower() in output.lower() or content2.lower() in output.lower():
+            return
+        context.page.wait_for_timeout(200)
     matched = content1.lower() in output.lower() or content2.lower() in output.lower()
     assert matched, f"Expected output to contain '{content1}' or '{content2}', but got:\n{output}"
 
 
 @then("the terminal output should not be empty")
 def step_terminal_output_not_empty(context):
-    output = context.terminal_page.get_output_text()
-    assert len(output) > 0, "Terminal output is empty"
+    timeout = 5.0
+    start = time.time()
+    output = ""
+    while time.time() - start < timeout:
+        output = context.terminal_page.get_output_text()
+        if len(output.strip()) > 0:
+            return
+        context.page.wait_for_timeout(200)
+    assert len(output.strip()) > 0, "Terminal output is empty"
 
 
 @then("the terminal output should be cleared")
 def step_terminal_output_cleared(context):
-    output = context.terminal_page.get_output_text()
+    timeout = 5.0
+    start = time.time()
+    output = ""
+    while time.time() - start < timeout:
+        output = context.terminal_page.get_output_text()
+        if output == "" or len(output.strip()) == 0:
+            return
+        context.page.wait_for_timeout(200)
     assert output == "" or len(output.strip()) == 0, f"Expected terminal output to be cleared, but got: {output}"

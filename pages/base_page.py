@@ -36,6 +36,7 @@ class BasePage:
         """Click element by selector with automatic fallback for animated elements."""
         locator = self.page.locator(selector).first
         try:
+            locator.scroll_into_view_if_needed(timeout=timeout)
             locator.click(timeout=timeout, force=force)
         except Exception:
             locator.dispatch_event("click")

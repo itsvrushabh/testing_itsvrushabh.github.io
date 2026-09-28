@@ -21,8 +21,13 @@ class TerminalPage(BasePage):
     def click_quick_command(self, cmd_name: str) -> None:
         """Click one of the quick command buttons."""
         selector = f"button.tui-cmd-btn[data-tui-cmd='{cmd_name}']"
-        self.click(selector, force=True)
-        self.page.wait_for_timeout(300)
+        btn = self.page.locator(selector).first
+        try:
+            btn.scroll_into_view_if_needed(timeout=2000)
+            btn.click(timeout=1500)
+        except Exception:
+            btn.dispatch_event("click")
+        self.page.wait_for_timeout(200)
 
     def type_command(self, command: str) -> None:
         """Type command into terminal input and press Enter."""
@@ -36,8 +41,14 @@ class TerminalPage(BasePage):
 
     def clear_output(self) -> None:
         """Click clear quick button or close button to reset terminal."""
-        if self.is_visible("button.tui-cmd-btn[data-tui-cmd='clear']"):
-            self.click("button.tui-cmd-btn[data-tui-cmd='clear']", force=True)
+        clear_selector = "button.tui-cmd-btn[data-tui-cmd='clear']"
+        if self.is_visible(clear_selector):
+            btn = self.page.locator(clear_selector).first
+            try:
+                btn.scroll_into_view_if_needed(timeout=2000)
+                btn.click(timeout=1500)
+            except Exception:
+                btn.dispatch_event("click")
         else:
-            self.click(self.BTN_CLOSE, force=True)
+            self.click(self.BTN_CLOSE)
         self.page.wait_for_timeout(200)
