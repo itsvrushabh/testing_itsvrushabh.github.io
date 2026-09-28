@@ -23,7 +23,6 @@ def get_failure_summary(log_file: str = "test-output.log") -> str:
     with open(log_file, "r", encoding="utf-8", errors="replace") as f:
         lines = f.readlines()
 
-    # Capture the last 60 lines containing error summaries
     recent_lines = lines[-60:] if len(lines) > 60 else lines
     return "".join(recent_lines)
 
@@ -43,8 +42,8 @@ def create_or_update_issue():
     env_name = os.environ.get("GITHUB_EVENT_NAME", "manual")
     run_id = os.environ.get("GITHUB_RUN_ID", "")
     server_url = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
-    repo = os.environ.get("GITHUB_REPOSITORY", "testing_itsvrushabh.github.io")
-    run_url = f"{server_url}/{repo}/actions/runs/{run_id}" if run_id else "Local / Manual run"
+    current_repo = os.environ.get("GITHUB_REPOSITORY", "")
+    run_url = f"{server_url}/{current_repo}/actions/runs/{run_id}" if run_id and current_repo else "Local / Manual run"
 
     failure_log = get_failure_summary()
     screenshots = get_failure_screenshots()
@@ -70,43 +69,55 @@ A test failure occurred while executing the automated BDD test suite against **h
 *Generated automatically by BDD Test Automation Suite.*
 """
 
-    print(f"Checking for existing open issues on {TARGET_REPO}...")
-    try:
-        check_cmd = [
-            "gh", "issue", "list",
-            "--repo", TARGET_REPO,
-            "--state", "open",
-            "--search", "Automated Test Health Check Failure",
-            "--json", "number",
-            "-q", ".[0].number"
-        ]
-        result = subprocess.run(check_cmd, capture_output=True, text=True)
-        existing_issue_number = result.stdout.strip()
+    # First attempt TARGET_REPO (itsvrushabh/itsvrushabh.github.io).
+    # If cross-repo token is not configured, fall back to current_repo.
+    target_repos = [TARGET_REPO]
+    if current_repo and current_repo != TARGET_REPO:
+        target_repos.append(current_repo)
 
-        if existing_issue_number and existing_issue_number.isdigit():
-            print(f"Found existing open issue #{existing_issue_number}. Adding comment...")
-            comment_cmd = [
-                "gh", "issue", "comment", existing_issue_number,
-                "--repo", TARGET_REPO,
-                "--body", f"### ⚠️ Recurring Failure Encountered\n\nRun: {run_url}\n\n```text\n{failure_log[-1500:]}\n```"
+    for repo in target_repos:
+        print(f"Attempting to record test failure issue on {repo}...")
+        try:
+            check_cmd = [
+                "gh", "issue", "list",
+                "--repo", repo,
+                "--state", "open",
+                "--search", "Automated Test Health Check Failure",
+                "--json", "number",
+                "-q", ".[0].number"
             ]
-            subprocess.run(comment_cmd, check=True)
-            print(f"Successfully commented on issue #{existing_issue_number}.")
-        else:
-            print(f"Creating new issue on {TARGET_REPO}...")
-            create_cmd = [
-                "gh", "issue", "create",
-                "--repo", TARGET_REPO,
-                "--title", ISSUE_TITLE,
-                "--body", body
-            ]
-            res = subprocess.run(create_cmd, capture_output=True, text=True, check=True)
-            print(f"Successfully created issue: {res.stdout.strip()}")
+            result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
+            existing_issue_number = result.stdout.strip()
 
-    except Exception as e:
-        print(f"[ERROR] Failed to create or update issue on {TARGET_REPO}: {e}")
-        # Do not fail the overall step to avoid masking root test failure
-        sys.exit(0)
+            if existing_issue_number and existing_issue_number.isdigit():
+                print(f"Found existing open issue #{existing_issue_number} on {repo}. Adding comment...")
+                comment_cmd = [
+                    "gh", "issue", "comment", existing_issue_number,
+                    "--repo", repo,
+                    "--body", f"### ⚠️ Recurring Failure Encountered\n\nRun: {run_url}\n\n```text\n{failure_log[-1500:]}\n```"
+                ]
+                subprocess.run(comment_cmd, check=True)
+                print(f"Successfully commented on issue #{existing_issue_number} on {repo}.")
+                return
+            else:
+                print(f"Creating new issue on {repo}...")
+                create_cmd = [
+                    "gh", "issue", "create",
+                    "--repo", repo,
+                    "--title", ISSUE_TITLE,
+                    "--body", body
+                ]
+                res = subprocess.run(create_cmd, capture_output=True, text=True, check=True)
+                print(f"Successfully created issue on {repo}: {res.stdout.strip()}")
+                return
+
+        except subprocess.CalledProcessError as e:
+            err_msg = e.stderr.strip() if e.stderr else str(e)
+            print(f"[NOTICE] Could not manage issue on {repo}: {err_msg}")
+            if repo == TARGET_REPO and len(target_repos) > 1:
+                print(f"[INFO] Cross-repo access to {TARGET_REPO} requires secret 'GH_PAT'. Falling back to local repo {current_repo}...")
+                continue
+            break
 
 
 if __name__ == "__main__":

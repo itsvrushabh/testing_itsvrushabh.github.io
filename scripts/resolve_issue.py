@@ -24,30 +24,35 @@ def resolve_open_issues():
     os.environ["GH_TOKEN"] = token
     run_id = os.environ.get("GITHUB_RUN_ID", "")
     server_url = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
-    repo = os.environ.get("GITHUB_REPOSITORY", "testing_itsvrushabh.github.io")
-    run_url = f"{server_url}/{repo}/actions/runs/{run_id}" if run_id else "Local / Manual run"
+    current_repo = os.environ.get("GITHUB_REPOSITORY", "")
+    run_url = f"{server_url}/{current_repo}/actions/runs/{run_id}" if run_id and current_repo else "Local / Manual run"
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    print(f"Checking for open automated test failure issues on {TARGET_REPO}...")
-    try:
-        check_cmd = [
-            "gh", "issue", "list",
-            "--repo", TARGET_REPO,
-            "--state", "open",
-            "--search", ISSUE_SEARCH_QUERY,
-            "--json", "number,title",
-            "-q", ".[].number"
-        ]
-        result = subprocess.run(check_cmd, capture_output=True, text=True)
-        issue_numbers = result.stdout.strip().split()
+    target_repos = [TARGET_REPO]
+    if current_repo and current_repo != TARGET_REPO:
+        target_repos.append(current_repo)
 
-        if not issue_numbers:
-            print("No open automated test failure issues found. System is healthy.")
-            return
+    for repo in target_repos:
+        print(f"Checking for open test failure issues on {repo}...")
+        try:
+            check_cmd = [
+                "gh", "issue", "list",
+                "--repo", repo,
+                "--state", "open",
+                "--search", ISSUE_SEARCH_QUERY,
+                "--json", "number,title",
+                "-q", ".[].number"
+            ]
+            result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
+            issue_numbers = result.stdout.strip().split()
 
-        for issue_num in issue_numbers:
-            print(f"Resolving and closing issue #{issue_num} on {TARGET_REPO}...")
-            resolution_comment = f"""### ✅ Automated Test Suite Passed — Issue Resolved
+            if not issue_numbers:
+                print(f"No open automated test failure issues found on {repo}.")
+                continue
+
+            for issue_num in issue_numbers:
+                print(f"Resolving and closing issue #{issue_num} on {repo}...")
+                resolution_comment = f"""### ✅ Automated Test Suite Passed — Issue Resolved
 
 The automated BDD test suite executed against **https://itsvrushabh.github.io** and all tests passed successfully with 0 errors.
 
@@ -57,18 +62,19 @@ The automated BDD test suite executed against **https://itsvrushabh.github.io** 
 
 *Closing issue automatically.*
 """
-            close_cmd = [
-                "gh", "issue", "close", issue_num,
-                "--repo", TARGET_REPO,
-                "--comment", resolution_comment,
-                "--reason", "completed"
-            ]
-            subprocess.run(close_cmd, check=True)
-            print(f"Successfully closed issue #{issue_num}.")
+                close_cmd = [
+                    "gh", "issue", "close", issue_num,
+                    "--repo", repo,
+                    "--comment", resolution_comment,
+                    "--reason", "completed"
+                ]
+                subprocess.run(close_cmd, check=True)
+                print(f"Successfully closed issue #{issue_num} on {repo}.")
 
-    except Exception as e:
-        print(f"[ERROR] Failed during issue resolution on {TARGET_REPO}: {e}")
-        sys.exit(0)
+        except subprocess.CalledProcessError as e:
+            err_msg = e.stderr.strip() if e.stderr else str(e)
+            print(f"[NOTICE] Could not query or close issues on {repo}: {err_msg}")
+            continue
 
 
 if __name__ == "__main__":

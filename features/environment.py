@@ -29,9 +29,9 @@ def before_all(context):
     
     launch_kwargs = {"headless": context.headless, "slow_mo": slow_mo}
     exec_path = context.config.userdata.get("executable_path")
-    if not exec_path:
-        for candidate in ["/usr/bin/chromium", "/usr/bin/google-chrome-stable", "/usr/bin/firefox"]:
-            if os.path.exists(candidate) and ("chromium" in candidate or "chrome" in candidate if browser_name == "chromium" else browser_name in candidate):
+    if not exec_path and browser_name == "chromium":
+        for candidate in ["/usr/bin/chromium", "/usr/bin/google-chrome-stable"]:
+            if os.path.exists(candidate):
                 exec_path = candidate
                 break
     if exec_path:

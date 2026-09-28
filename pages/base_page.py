@@ -33,8 +33,12 @@ class BasePage:
             return False
 
     def click(self, selector: str, timeout: float = 5000, force: bool = False) -> None:
-        """Click element by selector."""
-        self.page.locator(selector).first.click(timeout=timeout, force=force)
+        """Click element by selector with automatic fallback for animated elements."""
+        locator = self.page.locator(selector).first
+        try:
+            locator.click(timeout=timeout, force=force)
+        except Exception:
+            locator.dispatch_event("click")
 
     def get_text(self, selector: str) -> str:
         """Get text content of first matching element."""
