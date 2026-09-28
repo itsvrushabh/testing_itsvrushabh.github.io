@@ -52,6 +52,7 @@ def before_scenario(context, scenario):
 
     context.browser_context = context.browser.new_context(
         viewport={"width": 1440, "height": 900},
+        ignore_https_errors=True,
         user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 BDD-Test-Runner"
     )
     context.page = context.browser_context.new_page()

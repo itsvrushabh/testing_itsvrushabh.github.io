@@ -17,6 +17,10 @@ permissions:
 jobs:
   test-and-monitor:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
 
     steps:
       - name: Checkout Code
@@ -33,8 +37,8 @@ jobs:
       - name: Install Project Dependencies
         run: uv sync
 
-      - name: Install Playwright Chromium & Dependencies
-        run: uv run playwright install --with-deps chromium
+      - name: Install Playwright Browsers & System Dependencies
+        run: uv run playwright install --with-deps ${{ matrix.browser }}
 
       - name: Basic Task - Syntax & Feature Validation
         run: |
@@ -49,24 +53,32 @@ jobs:
               print(f'✓ Valid: {f} ({feature.name})')
           "
 
-      - name: Run BDD Test Suite
+      - name: Run BDD Test Suite (${{ matrix.browser }})
         id: run_tests
         run: |
           mkdir -p reports screenshots
           set -o pipefail
-          uv run behave -f behave_html_formatter:HTMLFormatter -o reports/report.html -f pretty 2>&1 | tee test-output.log
+          uv run behave -D browser=${{ matrix.browser }} -f behave_html_formatter:HTMLFormatter -o reports/report-${{ matrix.browser }}.html -f pretty 2>&1 | tee test-output.log
 
       - name: Upload Test Report & Failure Screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts
+          name: test-artifacts-${{ matrix.browser }}
           path: |
             reports/
             screenshots/
             test-output.log
 
-      - name: Report Failure to GitHub Issues
+      - name: Automatically Resolve & Close Existing GitHub Issue on Recovery
+        if: success()
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run python scripts/resolve_issue.py
+
+      - name: Automatically Report Failure to GitHub Issues
         if: failure()
         env:
           GH_PAT: ${{ secrets.GH_PAT }}

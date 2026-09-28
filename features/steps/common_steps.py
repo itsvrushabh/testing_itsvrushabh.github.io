@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 
 @given("I visit the website homepage")
+@step("I visit the website homepage")
 def step_visit_homepage(context):
     if not hasattr(context, "page") or context.page is None:
         context.browser_context = context.browser.new_context(viewport={"width": 1440, "height": 900})

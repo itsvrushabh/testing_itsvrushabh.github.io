@@ -48,6 +48,10 @@ testing_itsvrushabh.github.io/
 | [`theme_switcher.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/theme_switcher.feature) | `@ui`, `@theme` | Default theme validation (`tokyo-night`), cycling through color themes on `<html>[data-theme]`, and theme persistence in `localStorage("omarchy-site-theme")` across reloads. |
 | [`interactive_terminal.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/interactive_terminal.feature) | `@ui`, `@terminal` | Foot/Alacritty TUI simulation, window titlebar controls, quick command buttons (`fastfetch`, `about`, `skills`, `shortcuts`), keyboard typing & execution, clearing terminal. |
 | [`hero_and_assets.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/hero_and_assets.feature) | `@ui`, `@hero` | Header title & tagline validation, interactive installation snippet tabs (`cargo`, `curl`, `cli`), and CTA anchors. |
+| [`keyboard_shortcuts.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/keyboard_shortcuts.feature) | `@ui`, `@shortcuts` | Global hotkeys: `t` (theme cycle), `?` (toggle shortcuts modal cheatsheet), `Ctrl+K` (command palette), `Esc` (dismiss), and `` ` `` (jump to & focus TUI terminal prompt). |
+| [`responsive_design.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/responsive_design.feature) | `@ui`, `@responsive` | Responsive layout stability across Mobile (375x812), Tablet (768x1024), Desktop HD (1280x720), and Desktop Large (1440x900). |
+| [`broken_links.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/broken_links.feature) | `@api`, `@crawler` | Internal link crawler detecting broken 404/500 routes across all discovered internal navigation links and technical blog articles. |
+| [`performance_assets.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/performance_assets.feature) | `@api`, `@performance` | Critical hero 3D WebP assets and CSS stylesheet integrity, content-type headers, size budget compliance, and DOMContentLoaded load timing. |
 | [`seo_and_performance.feature`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/seo_and_performance.feature) | `@api`, `@seo` | HTTP 200 GET requests for all core subpages (`/`, `/projects/`, `/blog/`, `/about/`, `/contact/`, `/resume/`), canonical links, author, and Open Graph metadata. |
 
 ---
@@ -112,6 +116,22 @@ uv run behave --tags=@theme
 # Run navigation tests
 uv run behave --tags=@navigation
 # or: make test-nav
+
+# Run global keyboard shortcuts tests
+uv run behave --tags=@shortcuts
+# or: make test-shortcuts
+
+# Run responsive design viewport tests
+uv run behave --tags=@responsive
+# or: make test-responsive
+
+# Run broken links crawler tests
+uv run behave --tags=@crawler
+# or: make test-crawler
+
+# Run critical assets & performance tests
+uv run behave --tags=@performance
+# or: make test-perf
 
 # Run SEO & API endpoint health tests
 uv run behave --tags=@seo
