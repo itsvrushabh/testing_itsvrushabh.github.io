@@ -1,0 +1,52 @@
+@ui @terminal
+Feature: Interactive TUI Terminal Simulation # features/interactive_terminal.feature:2
+  As a developer visiting Vrushabh's website
+  I want to interact with the embedded terminal emulator
+  So that I can run commands like fastfetch, about, and skills directly in the browser
+  @ui @terminal
+  Feature: Interactive TUI Terminal Simulation  # features/interactive_terminal.feature:2
+
+  Scenario: Terminal window is rendered with titlebar and prompt  # features/interactive_terminal.feature:11
+    Given I visit the website homepage                            # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section            # features/steps/terminal_steps.py:5
+    Then the terminal window should be visible                    # features/steps/terminal_steps.py:11
+    And the terminal prompt should show "vrushabh@omarchy:~$"     # features/steps/terminal_steps.py:16
+
+  Scenario Outline: Execute quick commands via buttons -- @1.1   # features/interactive_terminal.feature:21
+    Given I visit the website homepage                           # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section           # features/steps/terminal_steps.py:5
+    When I click the quick command button "fastfetch"            # features/steps/terminal_steps.py:22
+    Then the terminal output should contain "Arch Linux"         # features/steps/terminal_steps.py:27
+
+  Scenario Outline: Execute quick commands via buttons -- @1.2   # features/interactive_terminal.feature:22
+    Given I visit the website homepage                           # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section           # features/steps/terminal_steps.py:5
+    When I click the quick command button "about"                # features/steps/terminal_steps.py:22
+    Then the terminal output should contain "Vrushabh"           # features/steps/terminal_steps.py:27
+
+  Scenario Outline: Execute quick commands via buttons -- @1.3   # features/interactive_terminal.feature:23
+    Given I visit the website homepage                           # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section           # features/steps/terminal_steps.py:5
+    When I click the quick command button "skills"               # features/steps/terminal_steps.py:22
+    Then the terminal output should contain "Rust"               # features/steps/terminal_steps.py:27
+
+  Scenario Outline: Execute quick commands via buttons -- @1.4   # features/interactive_terminal.feature:24
+    Given I visit the website homepage                           # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section           # features/steps/terminal_steps.py:5
+    When I click the quick command button "shortcuts"            # features/steps/terminal_steps.py:22
+    Then the terminal output should contain "Shortcuts"          # features/steps/terminal_steps.py:27
+
+  Scenario: Execute typed command via keyboard input                                 # features/interactive_terminal.feature:26
+    Given I visit the website homepage                                               # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section                               # features/steps/terminal_steps.py:5
+    When I type "fastfetch" into the terminal prompt and submit                      # features/steps/terminal_steps.py:34
+    Then the terminal output should match either "OS: Omarchy Linux" or "Arch Linux" # features/steps/terminal_steps.py:39
+
+  Scenario: Clear terminal output                      # features/interactive_terminal.feature:30
+    Given I visit the website homepage                 # features/steps/common_steps.py:6
+    And I navigate to the interactive terminal section # features/steps/terminal_steps.py:5
+    When I click the quick command button "about"      # features/steps/terminal_steps.py:22
+    Then the terminal output should not be empty       # features/steps/terminal_steps.py:46
+    When I click the quick command button "clear"      # features/steps/terminal_steps.py:22
+    Then the terminal output should be cleared         # features/steps/terminal_steps.py:52
+
