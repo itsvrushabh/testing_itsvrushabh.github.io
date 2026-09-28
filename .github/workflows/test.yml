@@ -1,4 +1,4 @@
-name: BDD Test Suite
+name: Website BDD Tests & Health Monitor
 
 on:
   push:
@@ -6,36 +6,57 @@ on:
   pull_request:
     branches: [ master, main ]
   schedule:
-    # Run daily at 06:00 UTC
+    # Run daily health check at 06:00 UTC
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
-  test:
+  test-and-monitor:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
 
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Install Dependencies
+      - name: Install Project Dependencies
         run: uv sync
 
-      - name: Install Playwright Browsers
+      - name: Install Playwright Chromium & Dependencies
         run: uv run playwright install --with-deps chromium
 
-      - name: Run BDD Test Suite
+      - name: Basic Task - Syntax & Feature Validation
         run: |
-          uv run behave -f behave_html_formatter:HTMLFormatter -o reports/report.html -f pretty
+          echo "Running Python syntax validation..."
+          uv run python -m py_compile pages/*.py features/steps/*.py scripts/*.py
+          echo "Validating Gherkin feature files syntax..."
+          uv run python -c "
+          import glob
+          from behave.parser import parse_file
+          for f in glob.glob('features/*.feature'):
+              feature = parse_file(f)
+              print(f'✓ Valid: {f} ({feature.name})')
+          "
 
-      - name: Upload Test Report & Screenshots
+      - name: Run BDD Test Suite
+        id: run_tests
+        run: |
+          mkdir -p reports screenshots
+          set -o pipefail
+          uv run behave -f behave_html_formatter:HTMLFormatter -o reports/report.html -f pretty 2>&1 | tee test-output.log
+
+      - name: Upload Test Report & Failure Screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -43,3 +64,12 @@ jobs:
           path: |
             reports/
             screenshots/
+            test-output.log
+
+      - name: Report Failure to GitHub Issues
+        if: failure()
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run python scripts/create_issue.py

@@ -13,3 +13,5 @@ wheels/
 reports/*.html
 screenshots/*.png
 .pytest_cache/
+test-output.log
+*.output

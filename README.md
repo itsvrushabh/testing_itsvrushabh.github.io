@@ -139,3 +139,26 @@ uv run behave -D base_url=https://itsvrushabh.github.io
 The test runner is configured with an automated failure hook in [`features/environment.py`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/features/environment.py).
 
 Whenever a scenario fails, a full-page screenshot is automatically captured and saved to `screenshots/FAIL_<scenario_name>.png` for immediate debugging.
+
+---
+
+## 🤖 GitHub Actions CI/CD & Automated Issue Reporting
+
+Workflow file: [`.github/workflows/test.yml`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/.github/workflows/test.yml)
+
+### Workflow Overview:
+1. **Triggers:**
+   - On `push` or `pull_request` to `master`/`main`
+   - On a daily schedule cron (`0 6 * * *`) for automated health monitoring
+   - Manually via `workflow_dispatch`
+2. **Basic Tasks:**
+   - Validates Python syntax for all modules (`py_compile`)
+   - Validates Gherkin `.feature` files structure
+3. **Execution & Reporting:**
+   - Runs full BDD test suite with `uv run behave`
+   - Automatically uploads HTML reports and screenshots as workflow run artifacts
+4. **Automated Issue Creation on Failure:**
+   - If any test fails, [`scripts/create_issue.py`](file:///home/cachyos/Work/testing_itsvrushabh.github.io/scripts/create_issue.py) automatically reports the issue directly to [**itsvrushabh/itsvrushabh.github.io/issues**](https://github.com/itsvrushabh/itsvrushabh.github.io/issues).
+   - If an open test failure issue already exists, it appends a comment with the latest failure details instead of creating duplicate issues.
+   - **Authentication:** Uses repository secret `GH_PAT` (Personal Access Token with `repo` or `issues:write` scope) for cross-repository issue creation, or defaults to `GITHUB_TOKEN`.
+
